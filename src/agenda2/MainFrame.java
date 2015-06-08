@@ -140,6 +140,7 @@ public class MainFrame extends JFrame implements ActionListener {
 			newRow.addSelfToJPanel(theJPanel, rows.size());
 			rows.add(newRow);
 		}
+		//System.out.println(this);
 	}
 	
 	private boolean allAreSelected(){
@@ -308,7 +309,14 @@ public class MainFrame extends JFrame implements ActionListener {
 	
 	
 	
-	
+	public String toString(){
+		String toReturn = "";
+		for (AgendaRow line: rows){
+			toReturn += line.toString();
+			toReturn += "\n";
+		}
+		return toReturn;
+	}
 	
 	
 	@Override

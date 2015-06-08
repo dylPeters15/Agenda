@@ -84,6 +84,24 @@ public class AgendaRow implements ActionListener {
 		return check.isSelected();
 	}
 	
+	
+	
+	public String toString(){
+		String toReturn = "";
+		
+		if (check.isSelected()){
+			toReturn += "\"selected\"";
+		} else {
+			toReturn += "\"not selected\"";
+		}
+		toReturn += ",";
+		toReturn += "\"" + finished.getText() + "\"";
+		toReturn += ",";
+		toReturn += "\"" + label.getText() + "\"";
+		
+		return toReturn;
+	}
+	
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
