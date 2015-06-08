@@ -22,7 +22,7 @@ public class WriteFile {
 		PrintWriter print = new PrintWriter(write);
 		print.printf("%s" + "%n", textLine);
 		print.close();
-		System.out.println("just wrote to file");
+		//System.out.println("just wrote to file");
 	}
 	
 	

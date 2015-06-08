@@ -17,12 +17,13 @@ import javax.swing.JMenuBar;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
+//import javax.swing.JTextArea;
+
 
 
 import agenda2.AgendaRow;
 
-import java.util.prefs.*;
+//import java.util.prefs.*;
 
 public class MainFrame extends JFrame implements ActionListener {
 	
@@ -48,7 +49,7 @@ public class MainFrame extends JFrame implements ActionListener {
 	public MainFrame(){
 		hasLoadedOrCreatedFile = false;
 		pref =Preferences.userNodeForPackage(this.getClass());
-		System.out.println(pref.get(PATH_KEY, "no key"));
+		//System.out.println(pref.get(PATH_KEY, "no key"));
 		loadedFilePath = "";
 		theFile = new String[0];
 		initMenu();
@@ -58,7 +59,7 @@ public class MainFrame extends JFrame implements ActionListener {
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		
 		load(pref.get(PATH_KEY, null));
-		printFile();
+		//printFile();
 		
 		addWindowListener(new WindowAdapter() {
 			  public void windowClosing(WindowEvent e) {
@@ -129,7 +130,7 @@ public class MainFrame extends JFrame implements ActionListener {
 						ReadFile read = new ReadFile(filePath);
 						theFile = read.openFile();
 						populateFromFile();
-						printFile();
+						//printFile();
 						JOptionPane.showMessageDialog(new JFrame(), "File "
 								+ filePath + " loaded successfully.");
 						if (!hasLoadedOrCreatedFile) {
@@ -173,7 +174,7 @@ public class MainFrame extends JFrame implements ActionListener {
 	
 	
 	private void populateFromFile(){
-		System.out.println("File length: " + theFile.length);
+		//System.out.println("File length: " + theFile.length);
 		for (int i = 0; i < theFile.length; i++){
 			boolean selected = false;
 			boolean finished = false;
@@ -181,38 +182,43 @@ public class MainFrame extends JFrame implements ActionListener {
 			
 			String line = theFile[i];
 			
-			if (!line.isEmpty() && line != null && !line.equals("\n")){
-				//System.out.println(line);
-				
-				
-				String thing = line.substring(1, line.indexOf(',')-1);
-				//System.out.println("thing" + thing);
-				if (thing.equals("selected")){
-					selected = true;
+			try {
+				if (!line.isEmpty() && line != null && !line.equals("\n")){
+					//System.out.println(line);
+					
+					
+					String thing = line.substring(1, line.indexOf(',')-1);
+					//System.out.println("thing" + thing);
+					if (thing.equals("selected")){
+						selected = true;
+					}
+					
+					
+					line = line.substring(line.indexOf(',')+1);
+					thing = line.substring(1, line.indexOf(',')-1);
+					//System.out.println("thing" + thing);
+					if (thing.equals("Finished")){
+						finished = true;
+					}
+					
+					line = line.substring(line.indexOf(',')+1);
+					thing = line.substring(1, line.length()-1);
+					label = thing;
+					
+					//System.out.println("thing" + thing);
+					//thing = thing.substring(1, thing.indexOf('"'));
+					//System.out.println("\n");
+					//System.out.println("selected " + selected);
+					//System.out.println("finished " + finished);
+					//System.out.println("label " + label);
+					//System.out.println("\n");
+					
+					addRow(selected, finished, label);
+					
 				}
-				
-				
-				line = line.substring(line.indexOf(',')+1);
-				thing = line.substring(1, line.indexOf(',')-1);
-				//System.out.println("thing" + thing);
-				if (thing.equals("Finished")){
-					finished = true;
-				}
-				
-				line = line.substring(line.indexOf(',')+1);
-				thing = line.substring(1, line.length()-1);
-				label = thing;
-				
-				//System.out.println("thing" + thing);
-				//thing = thing.substring(1, thing.indexOf('"'));
-				System.out.println("\n");
-				System.out.println("selected " + selected);
-				System.out.println("finished " + finished);
-				System.out.println("label " + label);
-				System.out.println("\n");
-				
-				addRow(selected, finished, label);
-				
+			} catch (StringIndexOutOfBoundsException e) {
+				// TODO Auto-generated catch block
+				//e.printStackTrace();
 			}
 			
 		}
@@ -230,15 +236,14 @@ public class MainFrame extends JFrame implements ActionListener {
 		try {
 			ReadFile read = new ReadFile(filePath);
 			String[] newFile = read.openFile();
-			if (newFile.length == theFile.length){
-				for (int i = 0; i < theFile.length; i++){
-					if (!theFile[i].equals(newFile[i])){
-						return true;
-					}
-				}
+			String newFileString = "";
+			for (int i = 0; i < newFile.length; i++){
+				newFileString += newFile[i] + "\n";
+			}
+			if (newFileString.equals(this.toString())){
 				return false;
 			} else {
-				return false;
+				return true;
 			}
 		} catch (IOException ex) {
 			return true;
