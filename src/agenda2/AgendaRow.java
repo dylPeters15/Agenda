@@ -27,7 +27,7 @@ public class AgendaRow implements ActionListener {
 		//set action listeners
 		finished.addActionListener(this);
 		//set initial states
-		check.setSelected(true);
+		check.setSelected(checked);
 		if (isFinished){
 			finished.doClick();
 			//finished.setText("Not Finished");

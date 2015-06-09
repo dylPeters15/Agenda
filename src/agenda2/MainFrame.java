@@ -28,7 +28,7 @@ import agenda2.AgendaRow;
 public class MainFrame extends JFrame implements ActionListener {
 	
 	
-	///////////////////////save and load I think are the only two methods that need to be added to
+	//////////////////////add "remove preferences" button
 
 	/**
 	 * 
@@ -63,6 +63,7 @@ public class MainFrame extends JFrame implements ActionListener {
 		
 		addWindowListener(new WindowAdapter() {
 			  public void windowClosing(WindowEvent e) {
+				  System.out.println(loadedFilePath);
 				    if (loadedFilePath != null && !loadedFilePath.isEmpty() && fileHasChanged(loadedFilePath)) {
 						/*int confirmed = JOptionPane.showConfirmDialog(null, 
 										        "Are you sure you want to exit the program?", "Exit Program Message Box",
@@ -240,7 +241,7 @@ public class MainFrame extends JFrame implements ActionListener {
 			for (int i = 0; i < newFile.length; i++){
 				newFileString += newFile[i] + "\n";
 			}
-			if (newFileString.equals(this.toString())){
+			if (newFileString.trim().equals(this.toString().trim())){
 				return false;
 			} else {
 				return true;
