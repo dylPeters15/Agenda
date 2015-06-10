@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
 import javax.swing.JButton;
@@ -18,6 +19,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 //import javax.swing.JTextArea;
+
 
 
 
@@ -38,17 +40,19 @@ public class MainFrame extends JFrame implements ActionListener {
 	private ArrayList<AgendaRow> rows;
 	private JPanel theJPanel;
 	
+	private JButton removePrefs;
+	
 	
 	private final String PATH_KEY = "Path";
 	private String loadedFilePath;
 	private String[] theFile;
-	private Preferences pref;
+	//private Preferences pref;
 	private JButton save;
 	private boolean hasLoadedOrCreatedFile;
 	
 	public MainFrame(){
 		hasLoadedOrCreatedFile = false;
-		pref =Preferences.userNodeForPackage(this.getClass());
+		//pref =Preferences.userNodeForPackage(this.getClass());
 		//System.out.println(pref.get(PATH_KEY, "no key"));
 		loadedFilePath = "";
 		theFile = new String[0];
@@ -58,7 +62,20 @@ public class MainFrame extends JFrame implements ActionListener {
 		setBounds(200, 200, 1000, 500);
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		
-		load(pref.get(PATH_KEY, null));
+		//String fileToLoad;
+		if (Preferences.userNodeForPackage(this.getClass()).get(PATH_KEY, null) == null){
+			try {
+				Preferences.userNodeForPackage(this.getClass()).removeNode();
+				removePrefs.setEnabled(false);
+			} catch (BackingStoreException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+		} else {
+			load(Preferences.userNodeForPackage(this.getClass()).get(PATH_KEY, null));
+		}
+		
+		//load(pref.get(PATH_KEY, null));
 		//printFile();
 		
 		addWindowListener(new WindowAdapter() {
@@ -138,7 +155,14 @@ public class MainFrame extends JFrame implements ActionListener {
 							enableButtons();
 							hasLoadedOrCreatedFile = true;
 						}
-						pref.put(PATH_KEY, filePath);
+						//pref.put(PATH_KEY, filePath);
+						
+						Preferences.userNodeForPackage(this.getClass()).put(PATH_KEY, filePath);
+						removePrefs.setEnabled(true);
+						
+						
+						
+						
 						loadedFilePath = filePath;
 						return true;
 					} catch (IOException ex) {
@@ -698,7 +722,27 @@ public class MainFrame extends JFrame implements ActionListener {
 		});
 		theJMenuBar.add(create);
 		
+		removePrefs = new JButton("Remove Preferences");
+		removePrefs.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent evt){
+				removePrefs();
+			}
+		});
+		theJMenuBar.add(removePrefs);
+		
 		setJMenuBar(theJMenuBar);
+	}
+	
+	private void removePrefs(){
+		//pref.remove(PATH_KEY);
+		//pref.rem
+		try {
+			Preferences.userNodeForPackage(this.getClass()).removeNode();
+			removePrefs.setEnabled(false);
+		} catch (BackingStoreException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 	}
 	
 	
