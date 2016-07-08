@@ -30,7 +30,6 @@ import agenda2.AgendaRow;
 public class MainFrame extends JFrame implements ActionListener {
 	
 	
-	//////////////////////add "remove preferences" button
 
 	/**
 	 * 
@@ -59,7 +58,7 @@ public class MainFrame extends JFrame implements ActionListener {
 		initMenu();
 		initPanel();
 		initArray();
-		setBounds(200, 200, 1000, 500);
+		setBounds(200, 200, 1075, 500);
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		
 		//String fileToLoad;
@@ -103,6 +102,10 @@ public class MainFrame extends JFrame implements ActionListener {
 				});
 		
 		setVisible(true);
+		System.out.println(Preferences.userNodeForPackage(this.getClass()));
+		System.out.println(Preferences.userNodeForPackage(this.getClass()).parent());
+		System.out.println(Preferences.userNodeForPackage(this.getClass()).parent().parent());
+
 	}
 	
 	
@@ -139,11 +142,21 @@ public class MainFrame extends JFrame implements ActionListener {
 			File f = new File(filePath);
 			if(f.exists() && !f.isDirectory()){ //file exists ... attempt to load file?
 				if (loadedFilePath != null && !loadedFilePath.isEmpty()){
-					if (filePath == loadedFilePath && fileHasChanged(filePath)){
+					if (fileHasChanged(loadedFilePath)){
 						//show dialog..."Save before reloading" + filePath + "?"...if yes save...if no do nothing...if cancel shouldContinue = false;
+						int choice = (int)JOptionPane.showOptionDialog(new JFrame(), "Save before loading " + filePath + "?", null, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null, new Object[] {"Yes","No"}, "Yes");
+						if (choice == JOptionPane.NO_OPTION){ //no
+							//clearAll();
+						} else if (choice == JOptionPane.YES_OPTION){//yes
+							save();
+							//clearAll();
+						} else {
+							shouldContinue = false;
+						}
 					}
 				}
 				if (shouldContinue) {
+					clearAll();
 					try {
 						ReadFile read = new ReadFile(filePath);
 						theFile = read.openFile();
@@ -164,6 +177,8 @@ public class MainFrame extends JFrame implements ActionListener {
 						
 						
 						loadedFilePath = filePath;
+						validate();
+						repaint();
 						return true;
 					} catch (IOException ex) {
 						JOptionPane.showMessageDialog(new JFrame(),
@@ -191,10 +206,16 @@ public class MainFrame extends JFrame implements ActionListener {
 			JOptionPane.showMessageDialog(new JFrame(), "Could not load " + filePath);
 			return false;
 		}
+		
 	}
 	
 	
-	
+	private void clearAll(){
+		for (AgendaRow row: rows){
+			row.setSelected(true);
+		}
+		removeSelectedRows();
+	}
 	
 	
 	
@@ -730,7 +751,19 @@ public class MainFrame extends JFrame implements ActionListener {
 		});
 		theJMenuBar.add(removePrefs);
 		
+		JButton newFile = new JButton("New");
+		newFile.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent evt){
+				makeNew();
+			}
+		});
+		theJMenuBar.add(newFile);
+		
 		setJMenuBar(theJMenuBar);
+	}
+	
+	private void makeNew(){
+		new MainFrame();
 	}
 	
 	private void removePrefs(){
