@@ -21,15 +21,16 @@ public class AgendaRow implements ActionListener {
 	
 	AgendaRow(boolean checked, boolean isFinished, String text){
 		check = new JCheckBox();
-		finished = new JToggleButton();
+		finished = new JToggleButton("Not Finished");
 		label = new JLabel();
 		
 		//set action listeners
 		finished.addActionListener(this);
 		//set initial states
-		check.setSelected(true);
-		if (!isFinished){
+		check.setSelected(checked);
+		if (isFinished){
 			finished.doClick();
+			//finished.setText("Not Finished");
 		}
 		label.setText(text);
 		

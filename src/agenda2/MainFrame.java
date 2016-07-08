@@ -3,8 +3,14 @@ package agenda2;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.prefs.BackingStoreException;
+import java.util.prefs.Preferences;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -12,10 +18,18 @@ import javax.swing.JMenuBar;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+//import javax.swing.JTextArea;
+
+
+
 
 import agenda2.AgendaRow;
 
+//import java.util.prefs.*;
+
 public class MainFrame extends JFrame implements ActionListener {
+	
+	
 
 	/**
 	 * 
@@ -25,15 +39,630 @@ public class MainFrame extends JFrame implements ActionListener {
 	private ArrayList<AgendaRow> rows;
 	private JPanel theJPanel;
 	
+	private JButton removePrefs;
+	
+	
+	private final String PATH_KEY = "Path";
+	private String loadedFilePath;
+	private String[] theFile;
+	//private Preferences pref;
+	private JButton save;
+	private boolean hasLoadedOrCreatedFile;
 	
 	public MainFrame(){
+		hasLoadedOrCreatedFile = false;
+		//pref =Preferences.userNodeForPackage(this.getClass());
+		//System.out.println(pref.get(PATH_KEY, "no key"));
+		loadedFilePath = "";
+		theFile = new String[0];
 		initMenu();
 		initPanel();
 		initArray();
-		setBounds(200, 200, 750, 500);
+		setBounds(200, 200, 1075, 500);
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
+		
+		//String fileToLoad;
+		if (Preferences.userNodeForPackage(this.getClass()).get(PATH_KEY, null) == null){
+			try {
+				Preferences.userNodeForPackage(this.getClass()).removeNode();
+				removePrefs.setEnabled(false);
+			} catch (BackingStoreException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+		} else {
+			load(Preferences.userNodeForPackage(this.getClass()).get(PATH_KEY, null));
+		}
+		
+		//load(pref.get(PATH_KEY, null));
+		//printFile();
+		
+		addWindowListener(new WindowAdapter() {
+			  public void windowClosing(WindowEvent e) {
+				  System.out.println(loadedFilePath);
+				    if (loadedFilePath != null && !loadedFilePath.isEmpty() && fileHasChanged(loadedFilePath)) {
+						/*int confirmed = JOptionPane.showConfirmDialog(null, 
+										        "Are you sure you want to exit the program?", "Exit Program Message Box",
+										        JOptionPane.YES_NO_OPTION);*/
+						int confirmed = JOptionPane.showConfirmDialog(
+								new JFrame(), "Save before exiting?");
+						if (confirmed == JOptionPane.YES_OPTION) {
+							//dispose();
+							setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+							save();
+						} else if (confirmed == JOptionPane.NO_OPTION) {
+							setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+						} else if (confirmed == JOptionPane.CANCEL_OPTION) {
+							setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+						}
+					} else {
+						setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+					}
+				  }
+				});
+		
 		setVisible(true);
+		System.out.println(Preferences.userNodeForPackage(this.getClass()));
+		System.out.println(Preferences.userNodeForPackage(this.getClass()).parent());
+		System.out.println(Preferences.userNodeForPackage(this.getClass()).parent().parent());
+
 	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	private boolean load(){
+		String filePath = JOptionPane.showInputDialog(new JFrame(), "Enter filepath to load: ");
+		if (filePath != null && !filePath.isEmpty()){
+			return load(filePath);
+		} else {
+			JOptionPane.showMessageDialog(new JFrame(), "Could not load " + filePath);
+			return false;
+		}
+	}
+	
+	
+	
+
+	private boolean load(String filePath){
+		boolean shouldContinue = true;
+		if (filePath != null && !filePath.isEmpty()){
+			File f = new File(filePath);
+			if(f.exists() && !f.isDirectory()){ //file exists ... attempt to load file?
+				if (loadedFilePath != null && !loadedFilePath.isEmpty()){
+					if (fileHasChanged(loadedFilePath)){
+						//show dialog..."Save before reloading" + filePath + "?"...if yes save...if no do nothing...if cancel shouldContinue = false;
+						int choice = (int)JOptionPane.showOptionDialog(new JFrame(), "Save before loading " + filePath + "?", null, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null, new Object[] {"Yes","No"}, "Yes");
+						if (choice == JOptionPane.NO_OPTION){ //no
+							//clearAll();
+						} else if (choice == JOptionPane.YES_OPTION){//yes
+							save();
+							//clearAll();
+						} else {
+							shouldContinue = false;
+						}
+					}
+				}
+				if (shouldContinue) {
+					clearAll();
+					try {
+						ReadFile read = new ReadFile(filePath);
+						theFile = read.openFile();
+						populateFromFile();
+						//printFile();
+						JOptionPane.showMessageDialog(new JFrame(), "File "
+								+ filePath + " loaded successfully.");
+						if (!hasLoadedOrCreatedFile) {
+							enableButtons();
+							hasLoadedOrCreatedFile = true;
+						}
+						//pref.put(PATH_KEY, filePath);
+						
+						Preferences.userNodeForPackage(this.getClass()).put(PATH_KEY, filePath);
+						removePrefs.setEnabled(true);
+						
+						
+						
+						
+						loadedFilePath = filePath;
+						validate();
+						repaint();
+						return true;
+					} catch (IOException ex) {
+						JOptionPane.showMessageDialog(new JFrame(),
+								"Could not load " + filePath);
+						return false;
+					}
+				} else {
+					return false;
+				}
+				
+				
+				
+			} else { // file does not exist
+				int choice = (int)JOptionPane.showOptionDialog(new JFrame(), "File " + filePath + " does not exist. Attempt to create file?", null, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null, new Object[] {"Yes","No"}, "Yes");
+				if (choice == JOptionPane.NO_OPTION){ //no
+					return false;
+				} else if (choice == JOptionPane.YES_OPTION){//yes
+					//System.out.println("yes");
+					return createAndLoad(filePath);
+				} else {
+					return false;
+				}
+			}
+		} else {
+			JOptionPane.showMessageDialog(new JFrame(), "Could not load " + filePath);
+			return false;
+		}
+		
+	}
+	
+	
+	private void clearAll(){
+		for (AgendaRow row: rows){
+			row.setSelected(true);
+		}
+		removeSelectedRows();
+	}
+	
+	
+	
+	private void populateFromFile(){
+		//System.out.println("File length: " + theFile.length);
+		for (int i = 0; i < theFile.length; i++){
+			boolean selected = false;
+			boolean finished = false;
+			String label = "";
+			
+			String line = theFile[i];
+			
+			try {
+				if (!line.isEmpty() && line != null && !line.equals("\n")){
+					//System.out.println(line);
+					
+					
+					String thing = line.substring(1, line.indexOf(',')-1);
+					//System.out.println("thing" + thing);
+					if (thing.equals("selected")){
+						selected = true;
+					}
+					
+					
+					line = line.substring(line.indexOf(',')+1);
+					thing = line.substring(1, line.indexOf(',')-1);
+					//System.out.println("thing" + thing);
+					if (thing.equals("Finished")){
+						finished = true;
+					}
+					
+					line = line.substring(line.indexOf(',')+1);
+					thing = line.substring(1, line.length()-1);
+					label = thing;
+					
+					//System.out.println("thing" + thing);
+					//thing = thing.substring(1, thing.indexOf('"'));
+					//System.out.println("\n");
+					//System.out.println("selected " + selected);
+					//System.out.println("finished " + finished);
+					//System.out.println("label " + label);
+					//System.out.println("\n");
+					
+					addRow(selected, finished, label);
+					
+				}
+			} catch (StringIndexOutOfBoundsException e) {
+				// TODO Auto-generated catch block
+				//e.printStackTrace();
+			}
+			
+		}
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	private boolean fileHasChanged(String filePath){
+		
+		try {
+			ReadFile read = new ReadFile(filePath);
+			String[] newFile = read.openFile();
+			String newFileString = "";
+			for (int i = 0; i < newFile.length; i++){
+				newFileString += newFile[i] + "\n";
+			}
+			if (newFileString.trim().equals(this.toString().trim())){
+				return false;
+			} else {
+				return true;
+			}
+		} catch (IOException ex) {
+			return true;
+		}
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	private boolean createAndLoad(){
+		String filePath = JOptionPane.showInputDialog(new JFrame(), "Enter filepath to create: ");
+		if (filePath != null && !filePath.isEmpty()){
+			return createAndLoad(filePath);
+		} else {
+			JOptionPane.showMessageDialog(new JFrame(), "Could not create " + filePath);
+			return false;
+		}
+	}
+	
+	private boolean createAndLoad(String fileName){
+		File f = new File(fileName);
+		if(!f.exists() || f.isDirectory()) { //file does not exist
+			
+			try {
+				WriteFile write = new WriteFile(fileName);
+				write.writeToFile("asdf");
+				load(fileName);
+			} catch (IOException ex) {
+				JOptionPane.showMessageDialog(new JFrame(), "Could not create " + fileName);
+			}
+		} else {
+			int choice = (int)JOptionPane.showOptionDialog(new JFrame(), "File " + fileName + " exists. Attempt to load file?", null, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null, new Object[] {"Yes","No"}, "Yes");
+			if (choice == JOptionPane.NO_OPTION){ //no
+				
+			} else if (choice == JOptionPane.YES_OPTION){//yes
+				//System.out.println("yes");
+				load(fileName);
+			}
+		}
+		
+		if (!hasLoadedOrCreatedFile){
+			enableButtons();
+			hasLoadedOrCreatedFile = true;
+		}
+		return true;
+	}
+	
+	private void enableButtons(){
+		save.setEnabled(true);
+	}
+	
+	
+	
+	
+	public void printFile(){
+		for (String line: theFile){
+			System.out.println(line);
+		}
+	}
+	
+	
+	
+	
+	
+	private void save(){
+		saveAs(loadedFilePath);
+	}
+	
+	private void saveAs(String filePath){
+		try {
+			WriteFile write = new WriteFile(filePath);
+			write.writeToFile(this.toString());
+		} catch (IOException ex){
+			JOptionPane.showMessageDialog(new JFrame(), "Could not save to " + filePath);
+		}
+	}
+	
+	
+	
+	/*public void initFrame(){
+		JFrame frame = new JFrame();
+		JPanel panel = new JPanel();
+		JTextArea text = new JTextArea();
+		JMenuBar bar = new JMenuBar();
+		JButton load = new JButton("Load File");
+		JButton create = new JButton("Create File");
+		save = new JButton("Save File");
+		
+		save.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent evt){
+				save();
+			}
+		});
+		bar.add(save);
+		save.setEnabled(false);
+		load.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent evt){
+				load();
+			}
+		});
+		bar.add(load);
+		
+		create.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent evt){
+				createAndLoad();
+			}
+		});
+		bar.add(create);
+		
+		
+		panel.add(text);
+		frame.setContentPane(panel);
+		frame.setJMenuBar(bar);
+		frame.setBounds(100,100,500,500);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		
+		addWindowListener(new WindowAdapter() {
+			  public void windowClosing(WindowEvent e) {
+				    if (loadedFilePath != null && !loadedFilePath.isEmpty() && fileHasChanged(loadedFilePath)) {
+						int confirmed = JOptionPane.showConfirmDialog(null, 
+										        "Are you sure you want to exit the program?", "Exit Program Message Box",
+										        JOptionPane.YES_NO_OPTION);
+						int confirmed = JOptionPane.showConfirmDialog(
+								new JFrame(), "Save before exiting?");
+						if (confirmed == JOptionPane.YES_OPTION) {
+							//dispose();
+							frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+							save();
+						} else if (confirmed == JOptionPane.NO_OPTION) {
+							frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+						} else if (confirmed == JOptionPane.CANCEL_OPTION) {
+							frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+						}
+					} else {
+						frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+					}
+				  }
+				});
+		frame.setVisible(true);
+	}
+	*/
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 
 	
 
@@ -89,7 +718,64 @@ public class MainFrame extends JFrame implements ActionListener {
 			}
 		});
 		theJMenuBar.add(finished);
+		
+		save = new JButton("Save");
+		save.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent evt){
+				save();
+			}
+		});
+		theJMenuBar.add(save);
+		
+		JButton load = new JButton("Load");
+		load.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent evt){
+				load();
+			}
+		});
+		theJMenuBar.add(load);
+		
+		JButton create = new JButton("Create");
+		create.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent evt){
+				createAndLoad();
+			}
+		});
+		theJMenuBar.add(create);
+		
+		removePrefs = new JButton("Remove Preferences");
+		removePrefs.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent evt){
+				removePrefs();
+			}
+		});
+		theJMenuBar.add(removePrefs);
+		
+		JButton newFile = new JButton("New");
+		newFile.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent evt){
+				makeNew();
+			}
+		});
+		theJMenuBar.add(newFile);
+		
 		setJMenuBar(theJMenuBar);
+	}
+	
+	private void makeNew(){
+		new MainFrame();
+	}
+	
+	private void removePrefs(){
+		//pref.remove(PATH_KEY);
+		//pref.rem
+		try {
+			Preferences.userNodeForPackage(this.getClass()).removeNode();
+			removePrefs.setEnabled(false);
+		} catch (BackingStoreException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 	}
 	
 	
@@ -141,6 +827,14 @@ public class MainFrame extends JFrame implements ActionListener {
 			rows.add(newRow);
 		}
 		//System.out.println(this);
+	}
+	
+	private void addRow(boolean selected, boolean finished, String text){
+		if (text != null && !text.isEmpty()){
+			AgendaRow newRow = new AgendaRow(selected, finished, text);
+			newRow.addSelfToJPanel(theJPanel, rows.size());
+			rows.add(newRow);
+		}
 	}
 	
 	private boolean allAreSelected(){
